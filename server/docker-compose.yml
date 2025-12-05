@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  # Backend API
+  api:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=${MONGODB_URI}
+      - ACCESS_TOKEN_SECRET=${ACCESS_TOKEN_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - BACK4APP_APP_ID=${BACK4APP_APP_ID}
+      - BACK4APP_MASTER_KEY=${BACK4APP_MASTER_KEY}
+      - BACK4APP_REST_KEY=${BACK4APP_REST_KEY}
+      - BACK4APP_JAVASCRIPT_KEY=${BACK4APP_JAVASCRIPT_KEY}
+      - BACK4APP_SERVER_URL=${BACK4APP_SERVER_URL}
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
