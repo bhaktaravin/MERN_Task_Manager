@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 const tasksSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: [true, 'User is required']
+    },
     title: { 
         type: String, 
         required: [true, 'Title is required'],
@@ -58,7 +63,7 @@ const tasksSchema = new mongoose.Schema({
 });
 
 // Index for better query performance
-tasksSchema.index({ completed: 1, priority: 1, dueDate: 1 });
+tasksSchema.index({ user: 1, completed: 1, priority: 1, dueDate: 1 });
 tasksSchema.index({ tags: 1 });
 
 // Virtual for overdue status

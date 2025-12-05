@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import taskRoutes from './routes/route.js';
+import parseRoutes from './routes/parseRoute.js';
+import authRoutes from './routes/authRoutes.js';
 import mongoose from 'mongoose';
 
 
@@ -22,13 +24,18 @@ mongoose.connect(process.env.MONGODB_URI)
 
 
 
-// Use task routes
-app.use('/api', taskRoutes);
+// Use routes
+app.use('/api/auth', authRoutes); // Authentication routes
+app.use('/api', taskRoutes); // Protected task routes
+app.use('/api', parseRoutes); // Back4App Parse routes
 app.use('/', (req, res) => {
-    res.send('Welcome to the Task Manager API');
+    res.send('Welcome to the Task Manager API - MongoDB & Back4App Parse Server with JWT Authentication');
 });
 
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  console.log('Auth routes: /api/auth/*');
+  console.log('MongoDB routes: /api/tasks (protected)');
+  console.log('Back4App routes: /api/parse/tasks');
 });

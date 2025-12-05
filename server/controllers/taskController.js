@@ -1,7 +1,7 @@
 // Generate Controller
 import Task from '../model/tasks.js';
 
-// Get all tasks with filtering, sorting, and pagination
+// Get all tasks with filtering, sorting, and pagination (user's own tasks)
 export const getTasks = async (req, res) => {
     try {
         const { 
@@ -15,8 +15,11 @@ export const getTasks = async (req, res) => {
             limit = 50
         } = req.query;
 
-        // Build filter object
-        const filter = { archived };
+        // Build filter object - only get tasks for authenticated user
+        const filter = { 
+            user: req.user._id,
+            archived 
+        };
         if (completed !== undefined) filter.completed = completed === 'true';
         if (priority) filter.priority = priority;
         if (tags) filter.tags = { $in: tags.split(',') };
@@ -54,7 +57,10 @@ export const getTasks = async (req, res) => {
 // Create a new task
 export const createTask = async (req, res) => {
     try {
-        const newTask = new Task(req.body);
+        const newTask = new Task({
+            ...req.body,
+            user: req.user._id
+        });
         await newTask.save();
         
         res.status(201).json({
@@ -89,18 +95,21 @@ export const updateTask = async (req, res) => {
     const { id } = req.params;
     
     try {
+        // Find task and verify ownership
+        const task = await Task.findOne({ _id: id, user: req.user._id });
+        
+        if (!task) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Task not found or you do not have permission to update it' 
+            });
+        }
+        
         const updatedTask = await Task.findByIdAndUpdate(
             id,
             req.body,
             { new: true, runValidators: true }
         );
-        
-        if (!updatedTask) {
-            return res.status(404).json({ 
-                success: false,
-                message: 'Task not found' 
-            });
-        }
         
         res.status(200).json({
             success: true,
@@ -140,14 +149,17 @@ export const deleteTask = async (req, res) => {
     const { id } = req.params;
     
     try {
-        const deletedTask = await Task.findByIdAndDelete(id);
+        // Find task and verify ownership
+        const task = await Task.findOne({ _id: id, user: req.user._id });
         
-        if (!deletedTask) {
+        if (!task) {
             return res.status(404).json({ 
                 success: false,
-                message: 'Task not found' 
+                message: 'Task not found or you do not have permission to delete it' 
             });
         }
+        
+        const deletedTask = await Task.findByIdAndDelete(id);
         
         res.status(200).json({ 
             success: true,
@@ -173,16 +185,19 @@ export const deleteTask = async (req, res) => {
 // Get task statistics
 export const getTaskStats = async (req, res) => {
     try {
-        const total = await Task.countDocuments({ archived: false });
-        const completed = await Task.countDocuments({ completed: true, archived: false });
+        const userId = req.user._id;
+        
+        const total = await Task.countDocuments({ user: userId, archived: false });
+        const completed = await Task.countDocuments({ user: userId, completed: true, archived: false });
         const overdue = await Task.countDocuments({ 
+            user: userId,
             dueDate: { $lt: new Date() },
             completed: false,
             archived: false
         });
         
         const byPriority = await Task.aggregate([
-            { $match: { archived: false } },
+            { $match: { user: userId, archived: false } },
             { $group: { _id: '$priority', count: { $sum: 1 } } }
         ]);
 

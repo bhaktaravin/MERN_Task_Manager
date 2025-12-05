@@ -11,8 +11,12 @@ import {
     validateUpdateTask, 
     validateTaskId 
 } from '../middleware/validation.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// All task routes require authentication
+router.use(authenticate);
 
 // Define routes with validation
 router.get('/tasks', getTasks);
