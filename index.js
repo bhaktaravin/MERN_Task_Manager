@@ -14,24 +14,22 @@ dotenv.config({ path: './.env' });
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Validate MongoDB URI
-if (!process.env.MONGODB_URI) {
-  console.error('ERROR: MONGODB_URI environment variable is not set!');
-  console.error('Please set MONGODB_URI in your environment variables or .env file');
-  process.exit(1);
-}
-
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch(err => {
-    console.error('MongoDB connection error:', err.message);
-    console.error('Please check your MONGODB_URI environment variable');
-    process.exit(1);
-  }); 
+// MongoDB connection - only if MONGODB_URI is provided (for custom MongoDB)
+// Back4App Parse Server has its own built-in database
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch(err => {
+      console.error('MongoDB connection error:', err.message);
+      console.error('Warning: MongoDB connection failed, using Parse Server database');
+    });
+} else {
+  console.log('No MONGODB_URI provided, using Parse Server built-in database');
+} 
 
 
 
